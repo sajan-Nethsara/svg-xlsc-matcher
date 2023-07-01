@@ -79,6 +79,21 @@ def get_map_id_converted_array(sheet):
 
 
 # main functions
+def handel_suites(element,err):
+
+    suites_text_array = element.find_all("text")
+    for suite in suites_text_array:
+        suite_text_converted = convert_string(suite.string)
+        name = f"suites-{suite_text_converted}-label"
+        suite["id"] = name
+    suite_path_element = element.find("path")
+    if suite_path_element == None:
+        print(Fore.RED + f"err --> <path> element not found in suites group")
+        err += 1
+    else:
+        suite_path_element["id"] = "suites-section"
+    return err
+
 
 def manipulate_svg(map_text_list, map_id_list):
     # return soup
@@ -94,36 +109,43 @@ def manipulate_svg(map_text_list, map_id_list):
     section = soup.find(id="sections")
     all_group_elements = section.find_all("g", recursive=False)
     for element in all_group_elements:
-        text_element = element.find("text")
-        inner_text = find_inner_text(text_element)
-        inner_text_modified = convert_string(inner_text)
-        try:
-            search_index = map_text_list.index(inner_text_modified)
-        except ValueError as e:
-            error_count += 1
-            print(Fore.RED + f"The --> {inner_text} <text> element is not in the excel file")
-        map_id = map_id_list[search_index]
-        group_name = get_group_id(map_id)
-        section_name = get_section_id(map_id)
-        label_name = get_label_id(map_id)
+        
+        if element["id"] == "suites-group" :
 
-        # renaming process
-        element["id"] = group_name
-        text_element["id"] = label_name
-        next_sibling = text_element.find_next_sibling()
-        previous_sibling = text_element.find_previous_sibling()
-        # renaming
-        if next_sibling:
-            next_sibling["id"] = section_name
-            print(Fore.GREEN + f"Rename process success {section_name}")
-        elif previous_sibling:
-            previous_sibling["id"] = section_name
-            print(Fore.GREEN + f"Rename process success {section_name}")
+            err_from_suites = handel_suites(element,error_count)
+            error_count = error_count + err_from_suites
 
-        else:
-            error_count += 1
-            print(Fore.RED + f"<Path> | <Polygon> element for {inner_text} not found in svg")
-            print(Style.RESET_ALL + '---')
+        else:    
+            text_element = element.find("text")
+            inner_text = find_inner_text(text_element)
+            inner_text_modified = convert_string(inner_text)
+            try:
+                search_index = map_text_list.index(inner_text_modified)
+            except ValueError as e:
+                error_count += 1
+                print(Fore.RED + f"The --> {inner_text} <text> element is not in the excel file")
+            map_id = map_id_list[search_index]
+            group_name = get_group_id(map_id)
+            section_name = get_section_id(map_id)
+            label_name = get_label_id(map_id)
+
+            # renaming process
+            element["id"] = group_name
+            text_element["id"] = label_name
+            next_sibling = text_element.find_next_sibling()
+            previous_sibling = text_element.find_previous_sibling()
+            # renaming
+            if next_sibling:
+                next_sibling["id"] = section_name
+                print(Fore.GREEN + f"Rename process success {section_name}")
+            elif previous_sibling:
+                previous_sibling["id"] = section_name
+                print(Fore.GREEN + f"Rename process success {section_name}")
+
+            else:
+                error_count += 1
+                print(Fore.RED + f"<Path> | <Polygon> element for {inner_text} not found in svg")
+                print(Style.RESET_ALL + '---')
 
     if error_count == 0:
         print(Back.GREEN + f"Operation completed successfully")
@@ -138,6 +160,8 @@ def ui_art ():
     print(asci1)
     asci2 = figlet_format("@sajan-Nethsara GitHub", font = "digital" )
     print(asci2)
+
+
 # the ultimate Main
 
 
